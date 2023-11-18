@@ -100,6 +100,7 @@ enum SCHED_CAUSE {
 typedef struct thread_control_block {
 
 	PCB* owner_pcb; /**< @brief This is null for a free TCB */
+  PTCB* owner_ptcb; /*This is null for a free PTCB*/
 
 	cpu_context_t context; /**< @brief The thread context */
 	Thread_type type; /**< @brief The type of thread */
@@ -129,6 +130,24 @@ typedef struct thread_control_block {
 #endif
 
 } TCB;
+
+typedef struct process_thread_control_block {
+  TCB* tcb;
+
+  Task task;
+  int argl;
+  void* args;
+
+  int exitval;
+
+  int exited;
+  int detached;
+  CondVar exit_cv;
+
+  int refcount;
+
+  rlnode ptcb_list_node;
+}
 
 /** @brief Thread stack size.
 
