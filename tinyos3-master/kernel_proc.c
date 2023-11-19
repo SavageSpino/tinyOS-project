@@ -90,10 +90,25 @@ PCB* acquire_PCB()
   return pcb;
 }
 
-PTCB* acquire_PTCB()
+PTCB* acquire_PTCB(TCB* tcb, Task task, int argl, void* args)
 {
   PTCB* ptcb = (PTCB*)xmalloc(sizeof(PTCB));  /*Allocate memory space for the PTCB*/
   assert(ptcb != NULL);                       /*Failsafe to make sure address space is empty*/
+
+  /*Initialize PTCB*/
+  ptcb->tcb = tcb;                            /*Connection from PTCB to TCB*/
+  ptcb->task = task;
+  ptcb->argl = argl;
+  ptcb->args = args;
+  ptcb->exited = 0;
+  ptcb->detached = 0;
+  ptcb->exit_cv = COND_INIT;
+  ptcb->refcount = 0;
+  rlnode_init(&ptcb->ptcb_list_node, ptcb);
+
+  tcb->owner_ptcb = ptcb;                     /*Connection from TCB to PTCB*/
+  ptcb->refcount++;                           /*With TCB connection complete adjust the refcount*/
+
   return ptcb;                                /*Return poiinter to first memory location of the PTCB*/
 }
 

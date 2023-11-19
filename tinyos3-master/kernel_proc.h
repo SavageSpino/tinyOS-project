@@ -65,6 +65,8 @@ typedef struct process_control_block {
 
 } PCB;
 
+/*Declaration of method for acquiring a new PTCB*/
+PTCB* acquire_PTCB(TCB* tcb, Task task, int argl, void* args);
 
 /**
   @brief Initialize the process table.
