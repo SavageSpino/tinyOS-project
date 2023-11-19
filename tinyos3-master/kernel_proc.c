@@ -90,6 +90,13 @@ PCB* acquire_PCB()
   return pcb;
 }
 
+PTCB* acquire_PTCB()
+{
+  PTCB* ptcb = (PTCB*)xmalloc(sizeof(PTCB));  /*Allocate memory space for the PTCB*/
+  assert(ptcb != NULL);                       /*Failsafe to make sure address space is empty*/
+  return ptcb;                                /*Return poiinter to first memory location of the PTCB*/
+}
+
 /*
   Must be called with kernel_mutex held
 */

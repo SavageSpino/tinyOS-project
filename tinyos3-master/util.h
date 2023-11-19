@@ -315,7 +315,7 @@ typedef struct resource_list_node {
     CCB* ccb;
     DCB* dcb;
     FCB* fcb;
-	PTCB* ptcb*
+	PTCB* ptcb;
     void* obj;
     rlnode_ptr node;
     intptr_t num;
