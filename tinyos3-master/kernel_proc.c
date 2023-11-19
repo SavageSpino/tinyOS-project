@@ -178,9 +178,42 @@ Pid_t sys_Exec(Task call, int argl, void* args)
     the initialization of the PCB.
    */
   if(call != NULL) {
+ 
+ // PTCB* mainPtcb = sys_CreateThread(call, newproc->argl, newproc->args);
+
+    /* create main PTCB*/
+    
+    PTCB* mainPtcb = (PTCB*)xmalloc(sizeof(PTCB));
+    
+    assert(mainPtcb != NULL);
+
+    /* initialize main PTCB*/
+    mainPtcb->task = call;
+    mainPtcb->argl = argl;
+    mainPtcb->args = args;
+    mainPtcb->exitval = 0;
+    mainPtcb->exited = 0;
+    mainPtcb->detached = 0;
+    mainPtcb->exit_cv = COND_INIT;
+    mainPtcb->refcount = 0;
+    
+    rlnode_init(& mainPtcb->ptcb_list_node, mainPtcb);
+    
+    rlist_push_back(& newproc->ptcb_list, &mainPtcb->ptcb_list_node);
+    newproc->thread_count++;
+
+    /* create main TCB and set it up to execute PCB's main task */
     newproc->main_thread = spawn_thread(newproc, start_main_thread);
+   
+    /* set right connections */
+    newproc->main_thread->owner_ptcb = mainPtcb;
+    mainPtcb->tcb = newproc->main_thread;
+
+    /* wake up TCB */
     wakeup(newproc->main_thread);
+
   }
+  
 
 
 finish:
