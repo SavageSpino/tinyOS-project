@@ -34,10 +34,15 @@ Tid_t sys_CreateThread(Task task, int argl, void* args)
   PTCB* newPTCB = acquire_PTCB(newTCB, task, argl, args);  /*Pointer to the memory location of the new PTCB returned by acquire_PTCB()*/
 
   rlist_push_back(&curPCB->ptcb_list, &newPTCB->ptcb_list_node);  /*Add the newPTCB's list node to the back of the ptcb list of the PCB*/
+  curPCB->thread_count++;   /*Increase thread count to include the thread just created*/
 
   wakeup(newTCB);    /*Change state of newTCB to READY and add to scheduler que*/
   return (Tid_t)newPTCB;
 }
+
+
+
+
 
 /**
   @brief Return the Tid of the current thread.
@@ -47,21 +52,107 @@ Tid_t sys_ThreadSelf()
 	return (Tid_t) cur_thread()->owner_ptcb;
 }
 
+
+
+
+
 /**
   @brief Join the given thread.
   */
 int sys_ThreadJoin(Tid_t tid, int* exitval)
 {
-	return -1;
+	PCB* pcb = CURPROC; /*Get the pcb of the current process*/
+  rlnode* PTCB_node =rlist_find(&pcb->ptcb_list, (PTCB*)tid, NULL);
+
+  /*Checks if PCB has a PTCB in its rlist with the tid entered to be Joined*/
+  if(PTCB_node->ptcb == NULL)
+  {
+    return -1;
+  }
+
+  PTCB* ptcb = PTCB_node->ptcb; /*PTCB with the correct id found*/
+
+  /*Check if the id of the thread entered is its own*/
+  if(tid == sys_ThreadSelf())
+  {
+    return -1;
+  }
+
+  /*Check if the thread to be Joined is legal*/
+  if(ptcb == NULL || ptcb->detached == 1)
+  {
+    return -1;
+  }
+
+  /*Since it is legal to join the thread increase refcount*/
+  ptcb->refcount++;
+
+  /*While thread to be joined is still running, wait for the thread to exit and return its exit_cv*/
+  while(ptcb->exited == 0 && ptcb->detached == 0)
+  {
+    kernel_wait(&ptcb->exit_cv, SCHED_USER);
+  }
+
+  /*Now that thread to be joined has exited, reduce refcount*/
+  ptcb->refcount--;
+
+  if(ptcb->detached == 1)
+  {
+    return -1;
+  }
+
+  /*If exitval is valid store it in PTCB*/
+  if(exitval != NULL)
+  {
+    (*exitval) = ptcb->exitval;
+  }
+
+  /*Check if the refcount of the joined thread is 0, if it is, the PTCB serves no purpose anymore*/
+  if(ptcb->refcount == 0)
+  {
+    rlist_remove(&ptcb->ptcb_list_node);
+    free(ptcb);
+  }
+
+  return 0; /*Return value to signal success*/
 }
+
+
+
+
+
 
 /**
   @brief Detach the given thread.
   */
 int sys_ThreadDetach(Tid_t tid)
 {
-	return -1;
+	PCB* pcb = CURPROC; /*Get the pcb of the current process*/
+  rlnode* PTCB_node = rlist_find(&pcb->ptcb_list, (PTCB*)tid, NULL);
+
+  /*Checks if PCB has a PTCB in its rlist with the tid entered to detach*/
+  if(PTCB_node == NULL)
+  {
+    return -1;
+  }
+
+  PTCB* ptcb = PTCB_node->ptcb; /*PTCB with the correct id found*/
+
+  /*Check if PTCB that needs to be detached is legal*/
+  if(ptcb == NULL || ptcb->exited == 1)
+  {
+    return -1;
+  }
+
+  ptcb->detached = 1; /*Change flag*/
+  kernel_broadcast(&ptcb->exit_cv);   /*Broadcast to wakeup other threads since the one which called sys_ThreadDetach is no longer running*/
+  return 0; /*Return value to signal success*/
+
 }
+
+
+
+
 
 /**
   @brief Terminate the current thread.
@@ -110,7 +201,7 @@ void sys_ThreadExit(int exitval)
 
     /* Put me into my parent's exited list */
     if(curproc->parent !=NULL){
-    rlist_push_front(& curproc->parent->e xited_list, &curproc->exited_node);
+    rlist_push_front(& curproc->parent->exited_list, &curproc->exited_node);
     kernel_broadcast(& curproc->parent->child_exit);
                               }
   
