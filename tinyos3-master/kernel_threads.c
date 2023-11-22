@@ -64,15 +64,19 @@ Tid_t sys_ThreadSelf()
 int sys_ThreadJoin(Tid_t tid, int* exitval)
 {
 	PCB* pcb = CURPROC; /*Get the pcb of the current process*/
-  rlnode* PTCB_node =rlist_find(&pcb->ptcb_list, (PTCB*)tid, NULL);
+
+  PTCB* ptcb = (PTCB*)tid;
+
+  if(ptcb == NULL)
+    return -1;
+  
+  if(!rlist_find(&pcb->ptcb_list,ptcb,NULL))
+    return -1;
 
   /*Checks if PCB has a PTCB in its rlist with the tid entered to be Joined*/
-  if(PTCB_node->ptcb == NULL)
-  {
-    return -1;
-  }
+  
 
-  PTCB* ptcb = PTCB_node->ptcb; /*PTCB with the correct id found*/
+  //PTCB* ptcb = PTCB_node->ptcb; /*PTCB with the correct id found*/
 
   /*Check if the id of the thread entered is its own*/
   if(tid == sys_ThreadSelf())
@@ -81,11 +85,12 @@ int sys_ThreadJoin(Tid_t tid, int* exitval)
   }
 
   /*Check if the thread to be Joined is legal*/
-  if(ptcb == NULL || ptcb->detached == 1)
+  
+  if(ptcb->detached == 1)
   {
     return -1;
   }
-
+  
   /*Since it is legal to join the thread increase refcount*/
   ptcb->refcount++;
 
@@ -118,10 +123,6 @@ int sys_ThreadJoin(Tid_t tid, int* exitval)
 
   return 0; /*Return value to signal success*/
 }
-
-
-
-
 
 
 /**

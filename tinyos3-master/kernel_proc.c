@@ -44,6 +44,9 @@ static inline void initialize_PCB(PCB* pcb)
   rlnode_init(& pcb->children_node, pcb);
   rlnode_init(& pcb->exited_node, pcb);
   pcb->child_exit = COND_INIT;
+
+  rlnode_init(& pcb->ptcb_list, NULL);
+  pcb->thread_count = 0;
 }
 
 
@@ -200,21 +203,27 @@ Pid_t sys_Exec(Task call, int argl, void* args)
     the initialization of the PCB.
    */
   if(call != NULL) {
- 
+    newproc->main_thread = spawn_thread(newproc, start_main_thread);
 
    /* create main PTCB through aqcuire_PTCB*/
-    PTCB* mainPtcb = acquire_PTCB(newproc->main_thread, call, argl, args);
-    rlist_push_back(& newproc->ptcb_list, &mainPtcb->ptcb_list_node);
-       
-       /*move the arguements to new ptcb  */
-      mainPtcb->argl=argl;//??
-      mainPtcb->args=args;//??
+    //PTCB* mainPtcb = acquire_PTCB(newproc->main_thread, call, argl, args);
+    PTCB* ptcb = (PTCB*)xmalloc(sizeof(PTCB));  /*Allocate memory space for the PTCB*/
+    assert(ptcb != NULL);                       /*Failsafe to make sure address space is empty*/
 
-       mainPtcb->task=call;//set ptcb function
+    /*Initialize PTCB*/
+    ptcb->tcb = newproc->main_thread;                            /*Connection from PTCB to TCB*/
+    ptcb->task = newproc->main_task;
+    ptcb->argl = newproc->argl;
+    ptcb->args = newproc->args;
+    ptcb->exited = 0;
+    ptcb->detached = 0;
+    ptcb->exit_cv = COND_INIT;
+    ptcb->refcount = 0;
+    rlnode_init(&ptcb->ptcb_list_node, ptcb);
 
-        /* create main TCB and set it up to execute PCB's main task */
-   
-        newproc->main_thread = spawn_thread(newproc, start_main_thread);
+    newproc->main_thread->owner_ptcb = ptcb;                     /*Connection from TCB to PTCB*/
+    ptcb->refcount++;
+    rlist_push_back(& newproc->ptcb_list, &ptcb->ptcb_list_node);
 
     newproc->thread_count++;
 
