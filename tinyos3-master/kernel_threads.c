@@ -2,6 +2,8 @@
 #include "tinyos.h"
 #include "kernel_sched.h"
 #include "kernel_proc.h"
+#include "kernel_cc.h"
+#include "kernel_streams.h"
 
 
 /*The following function is based on start_main_thread and is used to initialise and run the thread*/
@@ -161,7 +163,7 @@ void sys_ThreadExit(int exitval)
 {
  PCB *curproc = CURPROC;  /* cache for efficiency */
  TCB *curthd=cur_thread();
-PTCB *CURptcb= curthd->owner_ptcb;
+ PTCB *CURptcb= curthd->owner_ptcb;
 
  CURptcb->exitval=exitval;
 
@@ -170,32 +172,29 @@ PTCB *CURptcb= curthd->owner_ptcb;
  kernel_broadcast(&(CURptcb->exit_cv));
  CURptcb->refcount=CURptcb->refcount-1;
  CURptcb->exited=1;
-kernel_broadcast(&CURptcb->exit_cv);
-if(curproc->thread_count=0)
-{
-if (get_pcb(CURptcb)==NOPROC)
-{
-  
+ kernel_broadcast(&CURptcb->exit_cv);
+ if(curproc->thread_count==0)
+ {
+  if (get_pid(curproc)!= 1)  
+  {
+    /* 
+      Do all the other cleanup we want here, close files etc. 
+    */
 
-  /* 
-    Do all the other cleanup we want here, close files etc. 
-   */
+    /* Release the args data */
+    if(curproc->args) {
+      free(curproc->args);
+      curproc->args = NULL;
+    }
 
-  /* Release the args data */
-  if(curproc->args) {
-    free(curproc->args);
-    curproc->args = NULL;
-  }
-
-  /* Clean up FIDT */
-  for(int i=0;i<MAX_FILEID;i++) {
-    if(curproc->FIDT[i] != NULL) {
-      FCB_decref(curproc->FIDT[i]);
-      curproc->FIDT[i] = NULL;
+    /* Clean up FIDT */
+    for(int i=0;i<MAX_FILEID;i++) {
+      if(curproc->FIDT[i] != NULL) {
+        FCB_decref(curproc->FIDT[i]);
+        curproc->FIDT[i] = NULL;
+      }
     }
   }
-
-}
 
 
 
