@@ -67,16 +67,17 @@ int sys_ThreadJoin(Tid_t tid, int* exitval)
 
   PTCB* ptcb = (PTCB*)tid;
 
+  /*Check if tid does not exist*/
   if(ptcb == NULL)
+  {
     return -1;
-  
+  }
+
+  /*Check if tid coresponds to a ptcb of the same process*/
   if(!rlist_find(&pcb->ptcb_list,ptcb,NULL))
+  {
     return -1;
-
-  /*Checks if PCB has a PTCB in its rlist with the tid entered to be Joined*/
-  
-
-  //PTCB* ptcb = PTCB_node->ptcb; /*PTCB with the correct id found*/
+  }
 
   /*Check if the id of the thread entered is its own*/
   if(tid == sys_ThreadSelf())
@@ -85,7 +86,6 @@ int sys_ThreadJoin(Tid_t tid, int* exitval)
   }
 
   /*Check if the thread to be Joined is legal*/
-  
   if(ptcb->detached == 1)
   {
     return -1;

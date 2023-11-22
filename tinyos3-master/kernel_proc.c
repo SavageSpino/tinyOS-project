@@ -205,25 +205,12 @@ Pid_t sys_Exec(Task call, int argl, void* args)
   if(call != NULL) {
     newproc->main_thread = spawn_thread(newproc, start_main_thread);
 
-   /* create main PTCB through aqcuire_PTCB*/
-    //PTCB* mainPtcb = acquire_PTCB(newproc->main_thread, call, argl, args);
-    PTCB* ptcb = (PTCB*)xmalloc(sizeof(PTCB));  /*Allocate memory space for the PTCB*/
-    assert(ptcb != NULL);                       /*Failsafe to make sure address space is empty*/
+    /* create main PTCB through aqcuire_PTCB*/
+    PTCB* main_PTCB = acquire_PTCB(newproc->main_thread, newproc->main_task, newproc->argl, newproc->args);
 
-    /*Initialize PTCB*/
-    ptcb->tcb = newproc->main_thread;                            /*Connection from PTCB to TCB*/
-    ptcb->task = newproc->main_task;
-    ptcb->argl = newproc->argl;
-    ptcb->args = newproc->args;
-    ptcb->exited = 0;
-    ptcb->detached = 0;
-    ptcb->exit_cv = COND_INIT;
-    ptcb->refcount = 0;
-    rlnode_init(&ptcb->ptcb_list_node, ptcb);
-
-    newproc->main_thread->owner_ptcb = ptcb;                     /*Connection from TCB to PTCB*/
-    ptcb->refcount++;
-    rlist_push_back(& newproc->ptcb_list, &ptcb->ptcb_list_node);
+    newproc->main_thread->owner_ptcb = main_PTCB;                     /*Connection from TCB to PTCB*/
+    main_PTCB->refcount++;
+    rlist_push_back(& newproc->ptcb_list, &main_PTCB->ptcb_list_node);
 
     newproc->thread_count++;
 
