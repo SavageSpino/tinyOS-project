@@ -167,7 +167,7 @@ PTCB *CURptcb= curthd->owner_ptcb;
 
  
  curproc->thread_count=curproc->thread_count-1;
- kernel_broadcast
+ kernel_broadcast(&(CURptcb->exit_cv));
  CURptcb->refcount=CURptcb->refcount-1;
  CURptcb->exited=1;
 kernel_broadcast(&CURptcb->exit_cv);
@@ -175,7 +175,7 @@ if(curproc->thread_count=0)
 {
 if (get_pcb(CURptcb)==NOPROC)
 {
-  /
+  
 
   /* 
     Do all the other cleanup we want here, close files etc. 
