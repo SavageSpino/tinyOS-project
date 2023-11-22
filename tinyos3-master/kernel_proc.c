@@ -210,7 +210,7 @@ Pid_t sys_Exec(Task call, int argl, void* args)
       mainPtcb->argl=argl;//??
       mainPtcb->args=args;//??
 
-       mainPtcb->call=call;//set ptcb function
+       mainPtcb->task=call;//set ptcb function
 
         /* create main TCB and set it up to execute PCB's main task */
    
@@ -329,6 +329,7 @@ Pid_t sys_WaitChild(Pid_t cpid, int* status)
 void sys_Exit(int exitval)
 {
 
+ PCB *curproc = CURPROC;  /* cache for efficiency */
   
 
   /* First, store the exit status */
