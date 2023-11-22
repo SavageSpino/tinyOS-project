@@ -160,6 +160,22 @@ int sys_ThreadDetach(Tid_t tid)
 void sys_ThreadExit(int exitval)
 {
  PCB *curproc = CURPROC;  /* cache for efficiency */
+ TCB *curthd=cur_thread();
+PTCB *CURptcb= curthd->owner_ptcb;
+
+ CURptcb->exitval=exitval;
+
+ 
+ curproc->thread_count=curproc->thread_count-1;
+ kernel_broadcast
+ CURptcb->refcount=CURptcb->refcount-1;
+ CURptcb->exited=1;
+kernel_broadcast(&CURptcb->exit_cv);
+if(curproc->thread_count=0)
+{
+if (get_pcb(CURptcb)==NOPROC)
+{
+  /
 
   /* 
     Do all the other cleanup we want here, close files etc. 
@@ -179,7 +195,7 @@ void sys_ThreadExit(int exitval)
     }
   }
 
-
+}
 
 
 
@@ -209,7 +225,7 @@ void sys_ThreadExit(int exitval)
   assert(is_rlist_empty(& curproc->children_list));
   assert(is_rlist_empty(& curproc->exited_list));
 
-
+ 
 
 
   /* Disconnect my main_thread */
@@ -218,7 +234,7 @@ void sys_ThreadExit(int exitval)
   /* Now, mark the process as exited. */
   curproc->pstate = ZOMBIE;
  
-
+  }
  /* Bye-bye cruel world */
   kernel_sleep(EXITED, SCHED_USER);
 
