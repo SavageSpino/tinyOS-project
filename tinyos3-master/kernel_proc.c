@@ -201,14 +201,21 @@ Pid_t sys_Exec(Task call, int argl, void* args)
    */
   if(call != NULL) {
  
- // PTCB* mainPtcb = sys_CreateThread(call, newproc->argl, newproc->args);
 
-    /* create main TCB and set it up to execute PCB's main task */
-    newproc->main_thread = spawn_thread(newproc, start_main_thread);
-
-    /* create main PTCB*/
+   /* create main PTCB through aqcuire_PTCB*/
     PTCB* mainPtcb = acquire_PTCB(newproc->main_thread, call, argl, args);
     rlist_push_back(& newproc->ptcb_list, &mainPtcb->ptcb_list_node);
+       
+       /*move the arguements to new ptcb  */
+      mainPtcb->argl=argl;//??
+      mainPtcb->args=args;//??
+
+       mainPtcb->call=call;//set ptcb function
+
+        /* create main TCB and set it up to execute PCB's main task */
+   
+        newproc->main_thread = spawn_thread(newproc, start_main_thread);
+
     newproc->thread_count++;
 
     /* wake up TCB */
