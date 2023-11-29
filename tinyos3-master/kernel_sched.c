@@ -35,6 +35,8 @@ CCB cctx[MAX_CORES];
 	This must only be used in non-preemptive context.
 */
 #define CURTHREAD (CURCORE.current_thread)
+#define MAX_QUANTUMS 1000
+#define PRIORITY_QUEUES 5
 
 
 /*
@@ -165,6 +167,7 @@ TCB* spawn_thread(PCB* pcb, void (*func)())
 	tcb->thread_func = func;
 	tcb->wakeup_time = NO_TIMEOUT;
 	rlnode_init(&tcb->sched_node, tcb); /* Intrusive list node */
+	tcb->priority = PRIORITY_QUEUES-1;	/*Highest Priority Queue*/
 
 	tcb->its = QUANTUM;
 	tcb->rts = QUANTUM;
@@ -225,7 +228,7 @@ void release_TCB(TCB* tcb)
   Both of these structures are protected by @c sched_spinlock.
 */
 
-rlnode SCHED; /* The scheduler queue */
+rlnode SCHED[PRIORITY_QUEUES]; /* The scheduler queue */
 rlnode TIMEOUT_LIST; /* The list of threads with a timeout */
 Mutex sched_spinlock = MUTEX_INIT; /* spinlock for scheduler queue */
 
@@ -268,7 +271,7 @@ static void sched_register_timeout(TCB* tcb, TimerDuration timeout)
 static void sched_queue_add(TCB* tcb)
 {
 	/* Insert at the end of the scheduling list */
-	rlist_push_back(&SCHED, &tcb->sched_node);
+	rlist_push_back(&SCHED[tcb->priority], &tcb->sched_node);
 
 	/* Restart possibly halted cores */
 	cpu_core_restart_one();
@@ -326,8 +329,14 @@ static void sched_wakeup_expired_timeouts()
 */
 static TCB* sched_queue_select(TCB* current)
 {
-	/* Get the head of the SCHED list */
-	rlnode* sel = rlist_pop_front(&SCHED);
+	/*Loop to find the highest priority non empty queue*/
+	int counter = PRIORITY_QUEUES-1;
+	while(counter > 0 && is_rlist_empty(&SCHED[counter]))
+	{
+		counter --;
+	}
+	/* Get the head of the highest non empty priority list */
+	rlnode* sel = rlist_pop_front(&SCHED[counter]);
 
 	TCB* next_thread = sel->tcb; /* When the list is empty, this is NULL */
 
