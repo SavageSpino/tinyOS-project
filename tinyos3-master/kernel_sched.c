@@ -17,6 +17,10 @@
 	Core table and CCB-related declarations.
 
  *********************************************/
+/*counter to know when to call aging/ priority queues*/
+
+int   yield_counter =0;
+
 
 /* Core control blocks */
 CCB cctx[MAX_CORES];
@@ -329,16 +333,24 @@ static void sched_wakeup_expired_timeouts()
 */
 static TCB* sched_queue_select(TCB* current)
 {
+	
+	
+
 	/*Loop to find the highest priority non empty queue*/
-	int counter = PRIORITY_QUEUES-1;
-	while(counter > 0 && is_rlist_empty(&SCHED[counter]))
-	{
-		counter --;
+	rlnode* sel = NULL;
+	for (int counter = PRIORITY_QUEUES-1; counter >=0; counter--) {
+
+		if (!is_rlist_empty(&SCHED[counter])) {
+			sel = rlist_pop_front(&SCHED[counter]);
+			break;
+		}
 	}
 	/* Get the head of the highest non empty priority list */
-	rlnode* sel = rlist_pop_front(&SCHED[counter]);
+	
 
-	TCB* next_thread = sel->tcb; /* When the list is empty, this is NULL */
+	TCB* next_thread = NULL;
+	if (sel != NULL)
+	   next_thread = sel->tcb; /* When the list is empty, this is NULL */
 
 	if (next_thread == NULL)
 		next_thread = (current->state == READY) ? current : &CURCORE.idle_thread;
@@ -414,9 +426,17 @@ void sleep_releasing(Thread_state state, Mutex* mx, enum SCHED_CAUSE cause,
 
 void yield(enum SCHED_CAUSE cause)
 {
-	/* Reset the timer, so that we are not interrupted by ALARM */
+ /*increase yield_counter to know when the aging/priority boost must happen*/
+   yield_counter=yield_counter+1;
+	
+ if(yield_counter==MAX_QUANTUMS){
+  aging();
+ yield_counter=0;
+ }
+/* Reset the timer, so that we are not interrupted by ALARM */
 	TimerDuration remaining = bios_cancel_timer();
 
+	
 	/* We must stop preemption but save it! */
 	int preempt = preempt_off;
 
@@ -439,6 +459,43 @@ void yield(enum SCHED_CAUSE cause)
 	/* Get next */
 	TCB* next = sched_queue_select(current);
 	assert(next != NULL);
+
+	/*switch case to cahnge the behavior of scheduler according to the type of process 
+	(IO or longrunning) to apply MLFQ */
+	
+	switch(cause){
+case SCHED_QUANTUM:
+    if(current->priority>0)
+    {
+    	current->priority=current->priority-1;
+    }
+     break;
+
+case SCHED_IO:
+    
+   if(current->priority<PRIORITY_QUEUES-1)
+    {
+    
+    current->priority=current->priority+1;
+     }
+     break;
+
+case SCHED_MUTEX:
+    if(current->priority>0)
+    {
+    	current->priority=current->priority-1;
+    }
+     break;
+default :
+	  current->priority=current->priority;
+	  break;         
+	           }
+
+	
+
+
+
+
 
 	/* Save the current TCB for the gain phase */
 	CURCORE.previous_thread = current;
@@ -530,8 +587,12 @@ static void idle_thread()
  */
 void initialize_scheduler()
 {
-	rlnode_init(&SCHED[PRIORITY_QUEUES-1], NULL);
+	for (int i=0; i<PRIORITY_QUEUES;i++)
+	{
+	rlnode_init(&SCHED[i], NULL);
+	}
 	rlnode_init(&TIMEOUT_LIST, NULL);
+  
 }
 
 void run_scheduler()
@@ -569,3 +630,37 @@ void run_scheduler()
 	cpu_interrupt_handler(ALARM, NULL);
 	cpu_interrupt_handler(ICI, NULL);
 }
+
+
+
+void aging()
+
+{
+TCB* cur_thread=NULL;
+int count=0;
+while(count<= PRIORITY_QUEUES-1)
+{
+if(!is_rlist_empty(&(SCHED[count+1])))
+{
+cur_thread=rlist_pop_front(&(SCHED[count]))->tcb;
+rlist_push_back(&(SCHED[count+1]),&cur_thread->sched_node);
+cur_thread->priority--;
+}
+else
+{
+break;
+}
+count++;
+
+}
+
+
+}
+
+
+
+
+
+
+
+

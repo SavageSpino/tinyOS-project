@@ -131,6 +131,7 @@ int sys_ThreadJoin(Tid_t tid, int* exitval)
 int sys_ThreadDetach(Tid_t tid)
 {
 	PCB* pcb = CURPROC; /*Get the pcb of the current process*/
+
   rlnode* PTCB_node = rlist_find(&pcb->ptcb_list, (PTCB*)tid, NULL);
 
   /*Checks if PCB has a PTCB in its rlist with the tid entered to detach*/
@@ -148,7 +149,9 @@ int sys_ThreadDetach(Tid_t tid)
   }
 
   ptcb->detached = 1; /*Change flag*/
+  
   kernel_broadcast(&ptcb->exit_cv);   /*Broadcast to wakeup other threads since the one which called sys_ThreadDetach is no longer running*/
+  
   return 0; /*Return value to signal success*/
 
 }
