@@ -530,7 +530,7 @@ static void idle_thread()
  */
 void initialize_scheduler()
 {
-	rlnode_init(&SCHED, NULL);
+	rlnode_init(&SCHED[PRIORITY_QUEUES-1], NULL);
 	rlnode_init(&TIMEOUT_LIST, NULL);
 }
 
