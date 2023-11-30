@@ -39,7 +39,7 @@ CCB cctx[MAX_CORES];
 	This must only be used in non-preemptive context.
 */
 #define CURTHREAD (CURCORE.current_thread)
-#define MAX_QUANTUMS 1000
+#define MAX_QUANTUMS 500
 #define PRIORITY_QUEUES 5
 
 
@@ -171,7 +171,7 @@ TCB* spawn_thread(PCB* pcb, void (*func)())
 	tcb->thread_func = func;
 	tcb->wakeup_time = NO_TIMEOUT;
 	rlnode_init(&tcb->sched_node, tcb); /* Intrusive list node */
-	tcb->priority = PRIORITY_QUEUES-1;	/*Highest Priority Queue*/
+	tcb->priority = PRIORITY_QUEUES/2;	/*Highest Priority Queue*/
 
 	tcb->its = QUANTUM;
 	tcb->rts = QUANTUM;
@@ -426,23 +426,26 @@ void sleep_releasing(Thread_state state, Mutex* mx, enum SCHED_CAUSE cause,
 
 void yield(enum SCHED_CAUSE cause)
 {
- /*increase yield_counter to know when the aging/priority boost must happen*/
-   yield_counter=yield_counter+1;
-	
- if(yield_counter==MAX_QUANTUMS){
-  aging();
- yield_counter=0;
- }
+
 /* Reset the timer, so that we are not interrupted by ALARM */
 	TimerDuration remaining = bios_cancel_timer();
 
-	
+
 	/* We must stop preemption but save it! */
 	int preempt = preempt_off;
 
 	TCB* current = CURTHREAD; /* Make a local copy of current process, for speed */
 
 	Mutex_Lock(&sched_spinlock);
+
+	/*increase yield_counter to know when the aging/priority boost must happen*/
+    yield_counter++;
+
+ 	if(yield_counter==MAX_QUANTUMS)
+	 {
+  	 	aging();
+ 	 	yield_counter=0;
+ 	 }
 
 	/* Update CURTHREAD state */
 	if (current->state == RUNNING)
@@ -481,7 +484,7 @@ case SCHED_IO:
      break;
 
 case SCHED_MUTEX:
-    if(current->priority>0)
+    if(current->priority>0 && current->curr_cause==current->last_cause)
     {
     	current->priority=current->priority-1;
     }
@@ -637,20 +640,17 @@ void aging()
 
 {
 TCB* cur_thread=NULL;
-int count=0;
-while(count<= PRIORITY_QUEUES-1)
+int count= PRIORITY_QUEUES-2;
+while(count>= 0)
 {
-if(!is_rlist_empty(&(SCHED[count+1])))
+if(!is_rlist_empty(&(SCHED[count])))
 {
 cur_thread=rlist_pop_front(&(SCHED[count]))->tcb;
+cur_thread->priority++;
 rlist_push_back(&(SCHED[count+1]),&cur_thread->sched_node);
-cur_thread->priority--;
 }
-else
-{
-break;
-}
-count++;
+
+count--;
 
 }
 
