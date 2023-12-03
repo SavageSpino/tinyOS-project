@@ -171,7 +171,7 @@ TCB* spawn_thread(PCB* pcb, void (*func)())
 	tcb->thread_func = func;
 	tcb->wakeup_time = NO_TIMEOUT;
 	rlnode_init(&tcb->sched_node, tcb); /* Intrusive list node */
-	tcb->priority = PRIORITY_QUEUES/2;	/*Highest Priority Queue*/
+	tcb->priority = PRIORITY_QUEUES/2;	/*Highest Priority Queue/2*/
 
 	tcb->its = QUANTUM;
 	tcb->rts = QUANTUM;
@@ -333,9 +333,6 @@ static void sched_wakeup_expired_timeouts()
 */
 static TCB* sched_queue_select(TCB* current)
 {
-	
-	
-
 	/*Loop to find the highest priority non empty queue*/
 	rlnode* sel = NULL;
 	for (int counter = PRIORITY_QUEUES-1; counter >=0; counter--) {
@@ -345,9 +342,8 @@ static TCB* sched_queue_select(TCB* current)
 			break;
 		}
 	}
-	/* Get the head of the highest non empty priority list */
-	
 
+	/* Get the head of the highest non empty priority list */
 	TCB* next_thread = NULL;
 	if (sel != NULL)
 	   next_thread = sel->tcb; /* When the list is empty, this is NULL */
@@ -440,11 +436,12 @@ void yield(enum SCHED_CAUSE cause)
 
 	/*increase yield_counter to know when the aging/priority boost must happen*/
     yield_counter++;
-
- 	if(yield_counter==MAX_QUANTUMS)
+  
+     
+ 	if(yield_counter==MAX_QUANTUMS) /*check to see if the aging fuction is needed for optimization of speed */
 	 {
-  	 	aging();
- 	 	yield_counter=0;
+  	 	aging();/*call the aging function*/
+ 	 	yield_counter=0;/*Set the counter to see if the aging is needed to 0*/
  	 }
 
 	/* Update CURTHREAD state */
@@ -466,40 +463,34 @@ void yield(enum SCHED_CAUSE cause)
 	/*switch case to cahnge the behavior of scheduler according to the type of process 
 	(IO or longrunning) to apply MLFQ */
 	
-	switch(cause){
-case SCHED_QUANTUM:
-    if(current->priority>0)
-    {
-    	current->priority=current->priority-1;
-    }
-     break;
+	switch(cause){/*what should be done according the instances of the SCHED_QUANTUM */
+	case SCHED_QUANTUM:/*longrunning threads*/
+		if(current->priority>0)
+		{
+			current->priority=current->priority-1;
+		}
+		break;
 
-case SCHED_IO:
-    
-   if(current->priority<PRIORITY_QUEUES-1)
-    {
-    
-    current->priority=current->priority+1;
-     }
-     break;
+	case SCHED_IO:/*short running threads*/
+		if(current->priority<PRIORITY_QUEUES-1)
+			{
+			current->priority=current->priority+1;
+			}
+		break;
 
-case SCHED_MUTEX:
-    if(current->priority>0 && current->curr_cause==current->last_cause)
-    {
-    	current->priority=current->priority-1;
-    }
-     break;
-default :
-	  current->priority=current->priority;
-	  break;         
-	           }
+	case SCHED_MUTEX:
+		if(current->priority>0 && current->curr_cause==current->last_cause)
+		{
+			current->priority=current->priority-1;
+		}
+		break;
+	
+	default:
+		current->priority=current->priority;
+		break;         
+	}
 
 	
-
-
-
-
-
 	/* Save the current TCB for the gain phase */
 	CURCORE.previous_thread = current;
 
@@ -586,13 +577,13 @@ static void idle_thread()
 }
 
 /*
-  Initialize the scheduler queue
+  Initialize the scheduler priority queues
  */
 void initialize_scheduler()
 {
 	for (int i=0; i<PRIORITY_QUEUES;i++)
 	{
-	rlnode_init(&SCHED[i], NULL);
+		rlnode_init(&SCHED[i], NULL);
 	}
 	rlnode_init(&TIMEOUT_LIST, NULL);
   
@@ -636,25 +627,20 @@ void run_scheduler()
 
 
 
-void aging()
-
-{
-TCB* cur_thread=NULL;
-int count= PRIORITY_QUEUES-2;
+void aging(){
+TCB* cur_thread=NULL;/*set the new tcb* as zero*/
+int count= PRIORITY_QUEUES-2;/*set the count variable  */
 while(count>= 0)
 {
-if(!is_rlist_empty(&(SCHED[count])))
-{
-cur_thread=rlist_pop_front(&(SCHED[count]))->tcb;
-cur_thread->priority++;
-rlist_push_back(&(SCHED[count+1]),&cur_thread->sched_node);
+	if(!is_rlist_empty(&(SCHED[count])))/*check if the queue is not empty*/
+	{
+		cur_thread=rlist_pop_front(&(SCHED[count]))->tcb;/*cur_thread= firts thread of the queue*/
+		cur_thread->priority++;
+		rlist_push_back(&(SCHED[count+1]),&cur_thread->sched_node);/*put the cur_thread in the next queue*/
+	}
+
+	count--;/*decrease the number of count by one*/
 }
-
-count--;
-
-}
-
-
 }
 
 

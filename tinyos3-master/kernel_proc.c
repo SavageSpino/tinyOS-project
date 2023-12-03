@@ -326,7 +326,7 @@ Pid_t sys_WaitChild(Pid_t cpid, int* status)
 void sys_Exit(int exitval)
 {
 
- PCB *curproc = CURPROC;  /* cache for efficiency */
+  PCB *curproc = CURPROC;  /* cache for efficiency */
   
 
   /* First, store the exit status */
@@ -343,7 +343,7 @@ void sys_Exit(int exitval)
   } 
   curproc->exitval=exitval;
   
- sys_ThreadExit(exitval); 
+  sys_ThreadExit(exitval); 
   
  } 
 

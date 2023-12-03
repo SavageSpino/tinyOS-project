@@ -179,8 +179,7 @@ void sys_ThreadExit(int exitval)
  kernel_broadcast(&CURptcb->exit_cv);
  if(curproc->thread_count==0)
  {
-  if (get_pid(curproc)!= 1)  
-  {
+  if (get_pid(curproc)!= 1) {
     /* 
       Do all the other cleanup we want here, close files etc. 
     */
@@ -200,8 +199,6 @@ void sys_ThreadExit(int exitval)
     }
   }
 
-
-
     /* Reparent any children of the exiting process to the 
        initial task */
     PCB* initpcb = get_pcb(1);
@@ -220,8 +217,8 @@ void sys_ThreadExit(int exitval)
 
     /* Put me into my parent's exited list */
     if(curproc->parent !=NULL){
-    rlist_push_front(& curproc->parent->exited_list, &curproc->exited_node);
-    kernel_broadcast(& curproc->parent->child_exit);
+      rlist_push_front(& curproc->parent->exited_list, &curproc->exited_node);
+      kernel_broadcast(& curproc->parent->child_exit);
                               }
   
 
