@@ -1,6 +1,5 @@
 #ifndef __KERNEL_PROC_H
 #define __KERNEL_PROC_H
-
 /**
   @file kernel_proc.h
   @brief The process table and process management.
@@ -67,6 +66,7 @@ typedef struct process_control_block {
 
 /*Declaration of method for acquiring a new PTCB*/
 PTCB* acquire_PTCB(TCB* tcb, Task task, int argl, void* args);
+
 
 /**
   @brief Initialize the process table.
