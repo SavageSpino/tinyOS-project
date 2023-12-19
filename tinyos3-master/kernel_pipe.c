@@ -1,26 +1,47 @@
 
-#include "tinyos.h"
+#include "kernel_pipe.h"
 #include "kernel_dev.h"
 #include "kernel_streams.h"
 #include "kernel_sched.h"
 #include "kernel_cc.h"
 
+/*'
+==================== TO DO ==============================
+Add used_space in pipe_control_block -----DONE-----
+Make a pipe.h file and move the declarations from tinyos.h there -----DONE-----
+Make the do_nothing function for the file_ops -----DONE-----
+Change the pipe_Write logic	----DONE----
+Make it so that when there is space in the buffer but not enought ot fit the entire new data, so that you insert as much as it fits ----DONE----
+Change pipe_reader_close to match the logic of pipe_writer_close ----DONE----
+
+Fix Thread Exit to do a proper ptcb cleanup ----DONE----
+*/
+
+
+
+
+
 /*Initializing file_ops for reader and writer operations*/
 static file_ops reader_file_ops = {
 
-	.Open = NULL,
+	.Open = (void *)do_nothing,
 	.Read = pipe_read,
-	.Write = NULL,
+	.Write = (void *)do_nothing,
 	.Close = pipe_reader_close
 };
 
 static file_ops writer_file_ops = {
 	
-	.Open = NULL,
-	.Read = NULL,
+	.Open = (void *)do_nothing,
+	.Read = do_nothing,
 	.Write = pipe_write,
 	.Close = pipe_writer_close
 };
+
+int do_nothing(void* pipecb_t, char *buf, uint n)
+{
+	return -1;
+}
 
 Pipe_CB* acquire_PipeCB()
 {
@@ -33,6 +54,7 @@ Pipe_CB* acquire_PipeCB()
 	pipeCB->has_space = COND_INIT;
 	pipeCB->r_position = 0;
 	pipeCB->w_position = 0;
+	pipeCB->used_space = 0;
 	
 	return pipeCB;
 }
@@ -88,79 +110,45 @@ int pipe_write(void* pipecb_t, const char *buf, uint n)
 		return -1;
 	}
 
-	int available_space = 0;
-	int used_space = 0;
-
-	if(pipeCB->w_position > pipeCB->r_position)     /*pipe is in the form of [||||||||||||||||.................] or [........||||||||||||||........] or [.......................]*/
+	/*Check if the buffer is full*/
+	if(pipeCB->used_space == PIPE_BUFFER_SIZE)
 	{
-		/*Operations to figure out how much space is available*/
-		used_space = pipeCB->w_position - pipeCB->r_position;
-		available_space = PIPE_BUFFER_SIZE - used_space;
-
-		if(available_space >= n)
-		{
-			int counter = 0;
-			/*Loop to transfer all the data*/
-			while(counter<n)
-			{
-				pipeCB->BUFFER[pipeCB->w_position] = buf[counter];	/*Move data from one buffer to the other*/
-
-				/*Check if w_position is at the end of the buffer, in which case reset it to 0*/
-				if(pipeCB->w_position == PIPE_BUFFER_SIZE-1)
-				{
-					pipeCB->w_position = 0;
-				}else{
-					pipeCB->w_position++;
-				}
-
-				counter++;
-			}
-
-			kernel_broadcast(&pipeCB->has_data);
-			return n;
-
-		}else{
-			while(pipeCB->reader != NULL)	/*While someone is reading the pipe, wait to read and remove data, in order to make space*/
+		while(pipeCB->reader != NULL)	/*While someone is reading the pipe, wait to read and remove data, in order to make space*/
 			{
 				kernel_wait(&pipeCB->has_space, SCHED_PIPE);
 			}
-		}
-	}else{			/*pipe is in the form of [|||||||||||....................||||||||||||||||]*/
-
-		/*Operations to figure out how much space is available*/
-		used_space = (PIPE_BUFFER_SIZE - pipeCB->r_position-1) + pipeCB->w_position; 
-		available_space = PIPE_BUFFER_SIZE - used_space;
-
-		if(available_space >= n)
+	}else{
+		
+		int available_space = PIPE_BUFFER_SIZE - pipeCB->used_space;
+		/*Check if space is sufficient to fit all the data, if not enter as much as it fits*/
+		if(available_space < n)
 		{
-			int counter = 0;
-			/*Loop to transfer all the data*/
-			while(counter<n)
-			{
-				pipeCB->BUFFER[pipeCB->w_position] = buf[counter];	/*Move data from one buffer to the other*/
-
-				/*Check if w_position is at the end of the buffer, in which case reset it to 0*/
-				if(pipeCB->w_position == PIPE_BUFFER_SIZE-1)
-				{
-					pipeCB->w_position = 0;
-				}else{
-					pipeCB->w_position++;
-				}
-
-				counter++;
-			}
-
-			kernel_broadcast(&pipeCB->has_data);
-			return n;
-
-		}else{
-			while(pipeCB->reader != NULL)	/*While someone is reading the pipe, wait to read and remove data, in order to make space*/
-			{
-				kernel_wait(&pipeCB->has_space, SCHED_PIPE);
-			}
+			n = available_space;
 		}
+
+		int counter = 0;
+		/*Loop to transfer all the data*/
+		while(counter<n)
+		{
+			pipeCB->BUFFER[pipeCB->w_position] = buf[counter];	/*Move data from one buffer to the other*/
+
+			/*Check if w_position is at the end of the buffer, in which case reset it to 0*/
+			if(pipeCB->w_position == PIPE_BUFFER_SIZE-1)
+			{
+				pipeCB->w_position = 0;
+			}else{
+				pipeCB->w_position++;
+			}
+
+			counter++;
+			pipeCB->used_space++;
+		}
+
+		kernel_broadcast(&pipeCB->has_data);
 
 	}
+
+	return n;
 
 }
 
@@ -187,12 +175,12 @@ int pipe_writer_close(void* _pipecb)
 	if(pipeCB->reader == NULL)
 	{
 		free(pipeCB);
-		return 0;
 
 	}else{
-		Cond_Broadcast(&pipeCB->has_data);
-		return 0;
+		kernel_broadcast(&pipeCB->has_data);
 	}
+
+	return 0;
 
 }
 
@@ -209,7 +197,13 @@ int pipe_reader_close(void* _pipecb)
 
 	pipeCB->reader = NULL;
 	
-	/*No check needed, if there is no one to read data, no one should enter new data*/
-	free(pipeCB);
+	if(pipeCB->writer == NULL)
+	{
+		free(pipeCB);
+
+	}else{
+		kernel_broadcast(&pipeCB->has_space);
+	}
+
 	return 0;
 }
