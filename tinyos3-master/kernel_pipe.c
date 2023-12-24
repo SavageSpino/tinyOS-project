@@ -111,45 +111,40 @@ int pipe_write(void* pipecb_t, const char *buf, uint n)
 	}
 
 	/*Check if the buffer is full*/
-	if(pipeCB->used_space == PIPE_BUFFER_SIZE)
+	
+	while(pipeCB->used_space == PIPE_BUFFER_SIZE && pipeCB->reader != NULL)	/*While someone is reading the pipe, wait to read and remove data, in order to make space*/
 	{
-		while(pipeCB->reader != NULL)	/*While someone is reading the pipe, wait to read and remove data, in order to make space*/
-			{
-				kernel_wait(&pipeCB->has_space, SCHED_PIPE);
-			}
-	}else{
+		kernel_wait(&pipeCB->has_space, SCHED_PIPE);
+	}
 		
-		int available_space = PIPE_BUFFER_SIZE - pipeCB->used_space;
-		/*Check if space is sufficient to fit all the data, if not enter as much as it fits*/
-		if(available_space < n)
-		{
-			n = available_space;
-		}
-
-		int counter = 0;
-		/*Loop to transfer all the data*/
-		while(counter<n)
-		{
-			pipeCB->BUFFER[pipeCB->w_position] = buf[counter];	/*Move data from one buffer to the other*/
-
-			/*Check if w_position is at the end of the buffer, in which case reset it to 0*/
-			if(pipeCB->w_position == PIPE_BUFFER_SIZE-1)
-			{
-				pipeCB->w_position = 0;
-			}else{
-				pipeCB->w_position++;
-			}
-
-			counter++;
-			pipeCB->used_space++;
-		}
-
-		kernel_broadcast(&pipeCB->has_data);
-
+	int available_space = PIPE_BUFFER_SIZE - pipeCB->used_space;
+	/*Check if space is sufficient to fit all the data, if not enter as much as it fits*/
+	if(available_space < n)
+	{
+		n = available_space;
 	}
 
-	return n;
+	int counter = 0;
+	/*Loop to transfer all the data*/
+	while(counter<n)
+	{
+		pipeCB->BUFFER[pipeCB->w_position] = buf[counter];	/*Move data from one buffer to the other*/
 
+		/*Check if w_position is at the end of the buffer, in which case reset it to 0*/
+		if(pipeCB->w_position == PIPE_BUFFER_SIZE-1)
+		{
+			pipeCB->w_position = 0;
+		}else{
+			pipeCB->w_position++;
+		}
+
+		counter++;
+		pipeCB->used_space++;
+	}
+	//pipeCB->w_position = (pipeCB->w_position+1)%PIPE_BUFFER_SIZE
+	
+	kernel_broadcast(&pipeCB->has_data);
+	return n;
 }
 
 

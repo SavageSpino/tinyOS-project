@@ -5,7 +5,7 @@
 
 
 /*Declarations regarding PIPES */
-#define PIPE_BUFFER_SIZE 10000
+#define PIPE_BUFFER_SIZE 8192
 
 typedef struct pipe_control_block {
   FCB *reader;
