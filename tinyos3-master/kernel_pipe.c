@@ -150,9 +150,66 @@ int pipe_write(void* pipecb_t, const char *buf, uint n)
 
 int pipe_read(void* pipecb_t, char *buf, uint n)
 {
-	return -1;
-}
+Pipe_CB* pipeCB = (Pipe_CB*)pipecb_t;
+	/*Check if pipe control block entered exists*/
+	if(pipeCB == NULL)
+	{
+		return -1;
+	}
 
+	/*Check if reader and writer are valid*/
+	if(pipeCB->reader == NULL || pipeCB->writer == NULL)
+	{
+		return -1;
+	}
+
+	/*Check if the buffer is empty*/
+	
+	while(pipeCB->used_space == 0 && pipeCB->writer != NULL)	/*While someone is reading the pipe, wait to read and remove data, in order to make space*/
+	{
+		kernel_wait(&pipeCB->has_data, SCHED_PIPE);
+	}
+					
+uint  commitedSpace=n;
+
+
+	if(commitedSpace> pipeCB->used_space)
+		{
+		
+		commitedSpace = pipeCB->used_space;
+		
+		}
+
+	
+
+	int counter = 0;
+	/*Loop to read all the data*/
+	while(counter<commitedSpace)
+	{
+		
+
+		buf[counter] = pipeCB->BUFFER[pipeCB->r_position] ;	/*Move data from one buffer to the other*/
+
+		/*Check if w_position is at the end of the buffer, in which case reset it to 0*/
+		if(pipeCB->r_position == PIPE_BUFFER_SIZE-1)
+		{
+			pipeCB->r_position = 0;
+		}
+		else{
+			pipeCB->r_position++;
+		}
+        
+
+		counter++;
+  	    pipeCB->used_space--;
+		
+	}	
+	
+	
+	kernel_broadcast(&pipeCB->has_space);
+	
+	return counter;
+}
 
 
 int pipe_writer_close(void* _pipecb)
