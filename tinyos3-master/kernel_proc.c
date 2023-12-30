@@ -348,11 +348,100 @@ void sys_Exit(int exitval)
  } 
 
 
+static file_ops procinfo_ops = {
+
+  .Open = (void*)procinfo_open,
+  .Read = procinfo_read,
+  .Write = (void *)procinfo_write,
+  .Close = procinfo_close
+};
 
 
 
 Fid_t sys_OpenInfo()
 {
-	return NOFILE;
+  FCB* fcb;
+  Fid_t fid;
+
+  int result = FCB_reserve(1, &fid, &fcb);
+
+  if(result == 0)
+  {
+    return NOFILE;
+  }
+
+  PICB* picb = (PICB*)xmalloc(sizeof(PICB));
+  picb->cursor = &PT[0];
+
+  /*If memory allocation fails, unreserve the fidt and fcb to prevent memory leak*/
+  if(picb == NULL)
+  {
+    FCB_unreserve(1, &fid, &fcb);
+    return NOFILE;
+  }
+
+  /*Connect fcb with the procinfo_control_block and with the procinfo ops*/
+  fcb->streamobj = picb;
+  fcb->streamfunc = &procinfo_ops;
+
+
+  return fid;
 }
 
+
+int procinfo_open(void* pi_cb, char* buf, uint size)
+{
+  return NOFILE;
+}
+
+int procinfo_read(void* pi_cb, char* buf, uint size)
+{
+  PICB* picb = (PICB*)pi_cb;
+
+  for(int i = get_pid(picb->cursor); i < MAX_PROC; i++)
+  {
+    if(PT[i].pstate != FREE)
+    {
+      picb->info.pid = get_pid(&PT[i]);
+      picb->info.ppid = get_pid(PT[i].parent);
+      if(PT[i].pstate == ZOMBIE)
+      {
+        picb->info.alive = 0;
+      }else{
+        picb->info.alive = 1;
+      }
+      picb->info.thread_count = PT[i].thread_count;
+      picb->info.main_task = PT[i].main_task;
+      picb->info.argl = PT[i].argl;
+      
+      char* transfer_buf = (char *)PT[i].args;
+      int dataLen = PT[i].argl;
+      if(PROCINFO_MAX_ARGS_SIZE < dataLen)
+      {
+        dataLen = PROCINFO_MAX_ARGS_SIZE;
+      }
+      for(int j = 0; j < dataLen; j++)
+      {
+        picb->info.args[j] = transfer_buf[j];
+      }
+
+      memcpy(buf, (char *)&picb->info,sizeof(procinfo));
+      picb->cursor = &PT[i+1];
+      break;
+    }
+  }
+
+  return(sizeof(procinfo));
+}
+
+int procinfo_write(void* pi_cb, char* buf, uint size)
+{
+  return NOFILE;
+}
+
+int procinfo_close(void* pi_cb)
+{
+  PICB* picb = (PICB*)pi_cb;
+  free(picb);
+  return 0;
+}
