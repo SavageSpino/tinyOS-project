@@ -111,7 +111,6 @@ int pipe_write(void* pipecb_t, const char *buf, uint n)
 	}
 
 	/*Check if the buffer is full*/
-	
 	while(pipeCB->used_space == PIPE_BUFFER_SIZE && pipeCB->reader != NULL)	/*While someone is reading the pipe, wait to read and remove data, in order to make space*/
 	{
 		kernel_wait(&pipeCB->has_space, SCHED_PIPE);
@@ -149,7 +148,7 @@ int pipe_write(void* pipecb_t, const char *buf, uint n)
 
 
 int pipe_read(void* pipecb_t, char *buf, uint n)
-{
+{	
 	return -1;
 }
 
