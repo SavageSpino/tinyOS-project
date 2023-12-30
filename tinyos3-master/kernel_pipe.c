@@ -156,10 +156,16 @@ int pipe_read(void* pipecb_t, char *buf, uint n)
 		return -1;
 	}
 
-	/*Check if reader and writer are valid*/
-	if(pipeCB->reader == NULL || pipeCB->writer == NULL)
+	/*Check if reader is valid*/
+	if(pipeCB->reader == NULL)
 	{
-		return 0;
+		return -1;
+	}
+
+	uint  commitedSpace=n;
+	if(commitedSpace > pipeCB->used_space && pipeCB->writer == NULL)
+	{
+		commitedSpace = pipeCB->used_space;
 	}
 
 	/*Check if the buffer is empty*/
@@ -167,12 +173,6 @@ int pipe_read(void* pipecb_t, char *buf, uint n)
 	{
 		kernel_wait(&pipeCB->has_data, SCHED_PIPE);
 	}
-					
-	uint  commitedSpace=n;
-	if(commitedSpace> pipeCB->used_space)
-		{
-		commitedSpace = pipeCB->used_space;
-		}
 
 	int counter = 0;
 	/*Loop to read all the data*/
