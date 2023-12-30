@@ -162,37 +162,44 @@ int pipe_read(void* pipecb_t, char *buf, uint n)
 		return -1;
 	}
 
-	uint  commitedSpace=n;
-	if(commitedSpace > pipeCB->used_space && pipeCB->writer == NULL)
-	{
-		commitedSpace = pipeCB->used_space;
-	}
-
-	/*Check if the buffer is empty*/
-	while(pipeCB->used_space == 0 && pipeCB->writer != NULL)	/*While someone is reading the pipe, wait to read and remove data, in order to make space*/
+	/*While the buffer is empty and the pipe writer is not closed, wait for data to be entered*/
+	while(pipeCB->used_space == 0 && pipeCB->writer != NULL)	
 	{
 		kernel_wait(&pipeCB->has_data, SCHED_PIPE);
+	}
+
+	uint  commitedSpace=n;
+	/*Adjust the length of the data to read based on the pipeCB's used space*/
+	if(commitedSpace > pipeCB->used_space)
+	{
+		commitedSpace = pipeCB->used_space;
 	}
 
 	int counter = 0;
 	/*Loop to read all the data*/
 	while(counter<commitedSpace)
 	{
-		buf[counter] = pipeCB->BUFFER[pipeCB->r_position] ;	/*Move data from one buffer to the other*/
-		/*Check if w_position is at the end of the buffer, in which case reset it to 0*/
-		if(pipeCB->r_position == PIPE_BUFFER_SIZE-1)
+		/*Check if there are no more data to read*/
+		if(pipeCB->used_space != 0)
 		{
-			pipeCB->r_position = 0;
+			buf[counter] = pipeCB->BUFFER[pipeCB->r_position] ;	/*Move data from one buffer to the other*/
+			/*Check if w\r_position is at the end of the buffer, in which case reset it to 0*/
+			if(pipeCB->r_position == PIPE_BUFFER_SIZE-1)
+			{
+				pipeCB->r_position = 0;
+			}
+			else{
+				pipeCB->r_position++;
+			}
+			counter++;
+			pipeCB->used_space--;
+		}else{
+			break;
 		}
-		else{
-			pipeCB->r_position++;
-		}
-		counter++;
-  	    pipeCB->used_space--;
-
 	}	
 	kernel_broadcast(&pipeCB->has_space);
 	return counter;
+
 }
 
 
