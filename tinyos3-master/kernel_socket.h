@@ -35,7 +35,6 @@ typedef struct unbound_socket{
 
 }u_socket;
 
-
 typedef struct socket_control_block {
   uint refcount;
   FCB* fcb; 

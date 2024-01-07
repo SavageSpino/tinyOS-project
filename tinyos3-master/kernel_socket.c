@@ -54,15 +54,15 @@ int sys_ShutDown(Fid_t sock, shutdown_mode how)
 		return -1;
 	}
 
-	if(how = SHUTDOWN_READ)
+	if(how == SHUTDOWN_READ)
 	{
 		return pipe_reader_close(socket_cb->peer_s.read_pipe);
 	}
-	if(how = SHUTDOWN_WRITE)
+	if(how == SHUTDOWN_WRITE)
 	{
 		return pipe_writer_close(socket_cb->peer_s.write_pipe);
 	}
-	if(how = SHUTDOWN_BOTH)
+	if(how == SHUTDOWN_BOTH)
 	{
 		int res = 0;
 		res = pipe_reader_close(socket_cb->peer_s.read_pipe) + pipe_writer_close(socket_cb->peer_s.write_pipe);
