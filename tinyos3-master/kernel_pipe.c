@@ -115,17 +115,15 @@ int pipe_write(void* pipecb_t, const char *buf, uint n)
 	{
 		kernel_wait(&pipeCB->has_space, SCHED_PIPE);
 	}
-		
-	int available_space = PIPE_BUFFER_SIZE - pipeCB->used_space;
-	/*Check if space is sufficient to fit all the data, if not enter as much as it fits*/
-	if(available_space < n)
+
+	if(pipeCB->reader == NULL)
 	{
-		n = available_space;
+		return -1;
 	}
 
 	int counter = 0;
 	/*Loop to transfer all the data*/
-	while(counter<n)
+	while(counter<n && pipeCB->used_space<PIPE_BUFFER_SIZE)
 	{
 		pipeCB->BUFFER[pipeCB->w_position] = buf[counter];	/*Move data from one buffer to the other*/
 
@@ -140,10 +138,9 @@ int pipe_write(void* pipecb_t, const char *buf, uint n)
 		counter++;
 		pipeCB->used_space++;
 	}
-	//pipeCB->w_position = (pipeCB->w_position+1)%PIPE_BUFFER_SIZE
-	
+		
 	kernel_broadcast(&pipeCB->has_data);
-	return n;
+	return counter;
 }
 
 
@@ -168,35 +165,24 @@ int pipe_read(void* pipecb_t, char *buf, uint n)
 		kernel_wait(&pipeCB->has_data, SCHED_PIPE);
 	}
 
-	uint  commitedSpace=n;
-	/*Adjust the length of the data to read based on the pipeCB's used space*/
-	if(commitedSpace > pipeCB->used_space)
-	{
-		commitedSpace = pipeCB->used_space;
-	}
-
 	int counter = 0;
 	/*Loop to read all the data*/
-	while(counter<commitedSpace)
+	while(counter<n && pipeCB->used_space>0)
 	{
-		/*Check if there are no more data to read*/
-		if(pipeCB->used_space != 0)
+		buf[counter] = pipeCB->BUFFER[pipeCB->r_position] ;	/*Move data from one buffer to the other*/
+
+		/*Check if w\r_position is at the end of the buffer, in which case reset it to 0*/
+		if(pipeCB->r_position == PIPE_BUFFER_SIZE-1)
 		{
-			buf[counter] = pipeCB->BUFFER[pipeCB->r_position] ;	/*Move data from one buffer to the other*/
-			/*Check if w\r_position is at the end of the buffer, in which case reset it to 0*/
-			if(pipeCB->r_position == PIPE_BUFFER_SIZE-1)
-			{
-				pipeCB->r_position = 0;
-			}
-			else{
-				pipeCB->r_position++;
-			}
-			counter++;
-			pipeCB->used_space--;
-		}else{
-			break;
+			pipeCB->r_position = 0;
 		}
+		else{
+			pipeCB->r_position++;
+		}
+		counter++;
+		pipeCB->used_space--;
 	}	
+	
 	kernel_broadcast(&pipeCB->has_space);
 	return counter;
 

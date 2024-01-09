@@ -347,6 +347,7 @@ void sys_Exit(int exitval)
   
  } 
 
+/*============================= SYS INFO CODE ======================================*/
 
 static file_ops procinfo_ops = {
 
@@ -371,14 +372,7 @@ Fid_t sys_OpenInfo()
   }
 
   PICB* picb = (PICB*)xmalloc(sizeof(PICB));
-  picb->cursor = &PT[0];
-
-  /*If memory allocation fails, unreserve the fidt and fcb to prevent memory leak*/
-  if(picb == NULL)
-  {
-    FCB_unreserve(1, &fid, &fcb);
-    return NOFILE;
-  }
+  picb->cursor = 0;
 
   /*Connect fcb with the procinfo_control_block and with the procinfo ops*/
   fcb->streamobj = picb;
@@ -398,38 +392,37 @@ int procinfo_read(void* pi_cb, char* buf, uint size)
 {
   PICB* picb = (PICB*)pi_cb;
 
-  for(int i = get_pid(picb->cursor); i < MAX_PROC; i++)
-  {
-    if(PT[i].pstate != FREE)
-    {
-      picb->info.pid = get_pid(&PT[i]);
-      picb->info.ppid = get_pid(PT[i].parent);
-      if(PT[i].pstate == ZOMBIE)
-      {
-        picb->info.alive = 0;
-      }else{
-        picb->info.alive = 1;
-      }
-      picb->info.thread_count = PT[i].thread_count;
-      picb->info.main_task = PT[i].main_task;
-      picb->info.argl = PT[i].argl;
-      
-      char* transfer_buf = (char *)PT[i].args;
-      int dataLen = PT[i].argl;
-      if(PROCINFO_MAX_ARGS_SIZE < dataLen)
-      {
-        dataLen = PROCINFO_MAX_ARGS_SIZE;
-      }
-      for(int j = 0; j < dataLen; j++)
-      {
-        picb->info.args[j] = transfer_buf[j];
-      }
 
-      memcpy(buf, (char *)&picb->info,sizeof(procinfo));
-      picb->cursor = &PT[i+1];
-      break;
-    }
+  while(PT[picb->cursor].pstate == FREE && picb->cursor < MAX_PROC)
+  {
+     picb->cursor++;
   }
+  if(picb->cursor == MAX_PROC)
+  {
+    return 0;
+  }
+
+  picb->info.pid = get_pid(&PT[picb->cursor]);
+  picb->info.ppid = get_pid(PT[picb->cursor].parent);
+  if(PT[picb->cursor].pstate == ZOMBIE)
+  {
+    picb->info.alive = 0;
+  }else{
+     picb->info.alive = 1;
+  }
+  picb->info.thread_count = PT[picb->cursor].thread_count;
+  picb->info.main_task = PT[picb->cursor].main_task;
+  picb->info.argl = PT[picb->cursor].argl;
+      
+  int dataLen = PT[picb->cursor].argl;
+  if(dataLen > PROCINFO_MAX_ARGS_SIZE)
+  {
+     dataLen = PROCINFO_MAX_ARGS_SIZE;
+  }
+
+  memcpy(picb->info.args, PT[picb->cursor].args, dataLen);
+  memcpy(buf, (char *)&picb->info,sizeof(procinfo));
+  picb->cursor++;
 
   return(sizeof(procinfo));
 }

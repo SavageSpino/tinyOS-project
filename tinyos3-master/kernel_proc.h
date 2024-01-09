@@ -103,7 +103,7 @@ Pid_t get_pid(PCB* pcb);
 
 typedef struct procinfo_control_block {
   procinfo info;
-  PCB* cursor;
+  uint cursor;
 
 } PICB;
 
