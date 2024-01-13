@@ -1,6 +1,5 @@
 #ifndef __KERNEL_PROC_H
 #define __KERNEL_PROC_H
-
 /**
   @file kernel_proc.h
   @brief The process table and process management.
@@ -68,6 +67,7 @@ typedef struct process_control_block {
 /*Declaration of method for acquiring a new PTCB*/
 PTCB* acquire_PTCB(TCB* tcb, Task task, int argl, void* args);
 
+
 /**
   @brief Initialize the process table.
 
@@ -99,6 +99,18 @@ PCB* get_pcb(Pid_t pid);
   @returns the PID of the process, or NOPROC.
 */
 Pid_t get_pid(PCB* pcb);
+
+
+typedef struct procinfo_control_block {
+  procinfo info;
+  uint cursor;
+
+} PICB;
+
+int procinfo_open(void* pi_cb, char* buf, uint size);
+int procinfo_read(void* pi_cb, char* buf, uint size);
+int procinfo_write(void* pi_cb, char* buf, uint size);
+int procinfo_close(void* pi_cb);
 
 /** @} */
 

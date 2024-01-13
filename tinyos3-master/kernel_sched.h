@@ -285,6 +285,8 @@ void yield(enum SCHED_CAUSE cause);
 */
 void run_scheduler(void);
 
+void aging();
+
 /**
   @brief Initialize the scheduler.
 

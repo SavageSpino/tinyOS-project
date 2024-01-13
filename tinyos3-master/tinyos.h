@@ -3,6 +3,7 @@
 #define __TINYOS_H__
 
 #include <stdint.h>
+#include "util.h"
 
 /**
   @file tinyos.h

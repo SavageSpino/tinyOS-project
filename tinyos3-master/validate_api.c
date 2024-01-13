@@ -2596,12 +2596,45 @@ BARE_TEST(dummy_user_test,
 	ASSERT(1+1==2);
 }
 
+BOOT_TEST(test_openinfo_created,
+	"Test OpenInfo functions properly"
+	)
+{
+	Fid_t fid;
+	ASSERT((fid = OpenInfo())!=-1);
+	return 0;
+}
+
+BOOT_TEST(test_readinfo_return,
+	"Test OpenInfo functions properly"
+	)
+{
+	Fid_t fid;
+	ASSERT((fid = OpenInfo())!=-1);
+
+/*
+	Mutex mx = MUTEX_INIT;
+	Mutex_Lock(&mx);
+	PCB* pcb = acquire_PCB();
+
+*/
+
+	procinfo info;
+	int res;
+	ASSERT((res = Read(fid,(char*) &info, sizeof(info))) == sizeof(procinfo));
+
+	return 0;
+}
+
+
 
 TEST_SUITE(user_tests, 
 	"These are tests defined by the user."
 	)
 {
 	&dummy_user_test,
+	&test_openinfo_created,
+	&test_readinfo_return,
 	NULL
 };
 
