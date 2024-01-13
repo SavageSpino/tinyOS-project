@@ -48,6 +48,7 @@ typedef struct socket_control_block {
   
 }Socket_CB;
 
+
 typedef struct socket_connection_request{
   int admitted;
   Socket_CB* peer;
@@ -55,7 +56,6 @@ typedef struct socket_connection_request{
   rlnode queue_node;
 
 }connection_request;
-
 
 int socket_open();
 int socket_read();
