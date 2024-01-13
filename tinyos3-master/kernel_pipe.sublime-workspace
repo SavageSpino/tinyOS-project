@@ -1,0 +1,340 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"rl",
+				"rlnode_init"
+			],
+			[
+				"l",
+				"l_socket"
+			],
+			[
+				"Socket",
+				"socket_cb"
+			],
+			[
+				"str",
+				"streamobj"
+			],
+			[
+				"so",
+				"Socket_CB"
+			],
+			[
+				"C",
+				"CURPROC"
+			],
+			[
+				"pipe",
+				"pipeCB"
+			],
+			[
+				"re",
+				"return"
+			],
+			[
+				"T",
+				"type"
+			],
+			[
+				"S",
+				"Socket_CB"
+			],
+			[
+				"kenre",
+				"kernel_proc"
+			],
+			[
+				"k",
+				"kernel_sys"
+			],
+			[
+				"i",
+				"include"
+			],
+			[
+				"in",
+				"include"
+			],
+			[
+				"inc",
+				"include"
+			],
+			[
+				"unbo",
+				"unbound_s"
+			],
+			[
+				"has_",
+				"has_space"
+			],
+			[
+				"Ma",
+				"MAX_QUANTUMS"
+			],
+			[
+				"t",
+				"tcb"
+			],
+			[
+				"SH",
+				"SCHED"
+			],
+			[
+				"is",
+				"is_rlist_empty"
+			],
+			[
+				"PRio",
+				"PRIORITY_QUEUES"
+			],
+			[
+				"p",
+				"priority"
+			],
+			[
+				"SCHED",
+				"SCHED_QUANTUM"
+			],
+			[
+				"main",
+				"mainPtcb"
+			],
+			[
+				"ptcb",
+				"mainPtcb"
+			],
+			[
+				"e",
+				"exited"
+			],
+			[
+				"g",
+				"get_pcb"
+			],
+			[
+				"cur",
+				"curproc"
+			],
+			[
+				"c",
+				"curthd"
+			],
+			[
+				"owner",
+				"owner_ptcb"
+			],
+			[
+				"cu",
+				"curthd"
+			],
+			[
+				"PTc",
+				"ptcb"
+			],
+			[
+				"sys",
+				"sys_OpenInfo"
+			],
+			[
+				"pc",
+				"PCB"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/tinyOS-project/tinyos3-master/kernel_socket.c",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/tinyOS-project/tinyos3-master/kernel_socket.h",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/tinyOS-project/tinyos3-master/tinyos.h",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_pipe.c",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/tinyOS-project/tinyos3-master/kernel_streams.h",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/tinyOS-project/tinyos3-master/util.h",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/tinyOS-project/tinyos3-master/kernel_streams.c",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_pipe.h",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_socket.h",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_dev.h",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_streams.h",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/util.h",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_threads.c",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_streams.c",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/tinyos.h",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/tinyos_shell.c",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_proc.c",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_sched.c",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_sched.h",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_dev.c",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_sys.c",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_cc.h",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_cc.c",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_sys.h",
+		"/home/christos/Documents/GitHub/tinyOS-project/tinyos3-master/kernel_proc.h",
+		"/home/christos/tinyos3/bios.c",
+		"/home/christos/tinyos3/bios.h",
+		"/home/christos/tinyos3/bios_example2.c",
+		"/home/christos/tinyos3/bios_example4.c",
+		"/home/christos/tinyos3/bios_example5.c",
+		"/home/christos/tinyos3/console.c",
+		"/home/christos/tinyos3/.gdbinit",
+		"/home/christos/tinyos3/kernel_sys.h",
+		"/home/christos/tinyos3/tinyos.h"
+	],
+	"find":
+	{
+		"height": 26.0
+	},
+	"find_in_files":
+	{
+		"height": 119.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"scrollbar_highlights": true,
+		"show_context": true,
+		"use_buffer2": true,
+		"use_gitignore": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 26.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "kernel_pipe.sublime-project",
+	"replace":
+	{
+		"height": 48.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 215.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
